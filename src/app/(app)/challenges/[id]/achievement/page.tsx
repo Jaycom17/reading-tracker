@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { redirect, notFound } from 'next/navigation'
-import Image from 'next/image'
+import { format } from 'date-fns'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -37,60 +37,26 @@ export default async function AchievementPage({ params, searchParams }: Props) {
     book = data
   }
 
-  const completedBooks = await supabase
+  const { data: completedBooks } = await supabase
     .from('books')
     .select('*')
     .eq('challenge_id', id)
     .eq('status', 'completado')
 
-  const isChallengeComplete = (completedBooks.data?.length || 0) >= challenge.goal
+  const isChallengeComplete = (completedBooks?.length || 0) >= challenge.goal
 
-  const canvas = document.createElement('canvas')
-  canvas.width = 800
-  canvas.height = 450
-  const ctx = canvas.getContext('2d')!
-
-  // Background
-  ctx.fillStyle = '#1e1e2e'
-  ctx.fillRect(0, 0, 800, 450)
-
-  // Decorative elements
-  ctx.fillStyle = '#313244'
-  ctx.fillRect(0, 0, 800, 450)
-
-  // Title
-  ctx.fillStyle = '#cdd6f4'
-  ctx.font = 'bold 36px Inter, sans-serif'
-  ctx.textAlign = 'center'
-  ctx.fillText(book ? '¡Libro Completado!' : '¡Reto Completado!', 400, 100)
-
-  // Challenge/Book name
-  ctx.fillStyle = '#f5c2e7'
-  ctx.font = '24px Inter, sans-serif'
-  ctx.fillText(book ? book.title : challenge.name, 400, 150)
-
-  if (book) {
-    ctx.fillStyle = '#a6adc8'
-    ctx.font = '18px Inter, sans-serif'
-    ctx.fillText(`por ${book.author}`, 400, 190)
-  } else {
-    ctx.fillStyle = '#a6adc8'
-    ctx.font = '18px Inter, sans-serif'
-    ctx.fillText(`Meta: ${challenge.goal} libros en ${challenge.duration_weeks} semanas`, 400, 190)
-    ctx.fillText(`Completados: ${completedBooks.data?.length || 0} libros`, 400, 220)
+  if (book && book.status !== 'completado') {
+    redirect(`/challenges/${id}`)
   }
 
-  // Date
-  ctx.fillStyle = '#6c7086'
-  ctx.font = '16px Inter, sans-serif'
-  ctx.fillText(new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }), 400, 300)
+  if (!book_id && !isChallengeComplete) {
+    redirect(`/challenges/${id}`)
+  }
 
-  // Footer
-  ctx.fillStyle = '#45475a'
-  ctx.font = '14px Inter, sans-serif'
-  ctx.fillText('Reading Tracker - Tu progreso de lectura', 400, 400)
-
-  const imageUrl = canvas.toDataURL('image/png')
+  const imageUrl = `/api/achievement?challenge_id=${id}${book_id ? `&book_id=${book_id}` : ''}`
+  const fileName = book
+    ? `logro-libro-${book.title.toLowerCase().replace(/\s+/g, '-')}-${format(new Date(), 'yyyy-MM-dd')}.png`
+    : `logro-reto-${challenge.name.toLowerCase().replace(/\s+/g, '-')}-${format(new Date(), 'yyyy-MM-dd')}.png`
 
   return (
     <main className="min-h-screen bg-gray-900 py-12 px-4 flex items-center justify-center">
@@ -104,7 +70,7 @@ export default async function AchievementPage({ params, searchParams }: Props) {
           <div className="mt-8 space-y-4">
             <a
               href={imageUrl}
-              download={`logro-${book ? 'libro' : 'reto'}-${crypto.randomUUID()}.png`}
+              download={fileName}
               className="inline-block px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
             >
               Descargar imagen

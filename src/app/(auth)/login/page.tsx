@@ -39,7 +39,7 @@ export default function LoginPage() {
         router.push('/')
         router.refresh()
       }
-    } catch (_err: unknown) {
+    } catch {
       setError('Credenciales inválidas')
     } finally {
       setLoading(false)
