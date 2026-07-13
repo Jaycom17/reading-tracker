@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { useRouter } from 'next/navigation'
+import { getOrCreateProfile } from '@/actions/profiles'
 
 export const dynamic = 'force-dynamic'
 
@@ -36,6 +37,7 @@ export default function LoginPage() {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
+        await getOrCreateProfile()
         router.push('/')
         router.refresh()
       }
@@ -47,22 +49,68 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h1 className="text-center text-3xl font-bold text-gray-900">
-            {isSignUp ? 'Crear cuenta' : 'Iniciar sesión'}
-          </h1>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm text-center">
-              {error}
+    <div className="min-h-screen bg-paper flex">
+      <div className="hidden lg:flex lg:w-1/2 bg-ink relative overflow-hidden items-center justify-center">
+        <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{
+          backgroundImage: `radial-gradient(circle at 2px 2px, #C9A84C 1px, transparent 1px)`,
+          backgroundSize: '28px 28px'
+        }} />
+        <div className="relative z-10 text-center px-12">
+          <div className="w-20 h-20 rounded-2xl bg-gold/15 flex items-center justify-center mx-auto mb-8">
+            <svg className="w-10 h-10 text-gold" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+            </svg>
+          </div>
+          <h1 className="font-serif text-4xl text-paper font-semibold mb-3">Reading Tracker</h1>
+          <p className="text-paper/50 text-lg max-w-sm mx-auto leading-relaxed">
+            Tu diario de lectura personal. Establece retos, sigue tu progreso y celebra cada libro completado.
+          </p>
+          <div className="mt-12 flex justify-center gap-6">
+            <div className="text-center">
+              <div className="text-2xl font-serif text-gold font-semibold">Retos</div>
+              <div className="text-paper/40 text-sm mt-1">Personalizados</div>
             </div>
-          )}
-          <div className="rounded-md shadow-sm -space-y-px">
+            <div className="w-px bg-white/10" />
+            <div className="text-center">
+              <div className="text-2xl font-serif text-gold font-semibold">Progreso</div>
+              <div className="text-paper/40 text-sm mt-1">Visual</div>
+            </div>
+            <div className="w-px bg-white/10" />
+            <div className="text-center">
+              <div className="text-2xl font-serif text-gold font-semibold">Logros</div>
+              <div className="text-paper/40 text-sm mt-1">Compartibles</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="w-full lg:w-1/2 flex items-center justify-center px-6 py-12">
+        <div className="w-full max-w-sm">
+          <div className="lg:hidden text-center mb-10">
+            <div className="w-14 h-14 rounded-xl bg-gold/15 flex items-center justify-center mx-auto mb-4">
+              <svg className="w-7 h-7 text-gold" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+              </svg>
+            </div>
+            <h1 className="font-serif text-2xl text-ink font-semibold">Reading Tracker</h1>
+          </div>
+
+          <h2 className="font-serif text-3xl text-ink font-semibold mb-2">
+            {isSignUp ? 'Crear cuenta' : 'Bienvenido'}
+          </h2>
+          <p className="text-ink-light mb-8">
+            {isSignUp ? 'Regístrate para empezar' : 'Inicia sesión en tu cuenta'}
+          </p>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {error && (
+              <div className="bg-burgundy/8 border border-burgundy/25 text-burgundy px-4 py-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+
             <div>
-              <label htmlFor="email" className="sr-only">
+              <label htmlFor="email" className="block text-sm font-medium text-ink mb-1.5">
                 Email
               </label>
               <input
@@ -73,12 +121,13 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Email"
+                className="w-full px-4 py-2.5 bg-white border border-warm-gray rounded-lg text-ink placeholder-ink-light/50 focus:outline-none focus:ring-2 focus:ring-gold/30 focus:border-gold transition-all"
+                placeholder="tu@email.com"
               />
             </div>
+
             <div>
-              <label htmlFor="password" className="sr-only">
+              <label htmlFor="password" className="block text-sm font-medium text-ink mb-1.5">
                 Contraseña
               </label>
               <input
@@ -89,34 +138,32 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Contraseña"
+                className="w-full px-4 py-2.5 bg-white border border-warm-gray rounded-lg text-ink placeholder-ink-light/50 focus:outline-none focus:ring-2 focus:ring-gold/30 focus:border-gold transition-all"
+                placeholder="••••••••"
               />
             </div>
-          </div>
 
-          <div>
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+              className="w-full px-4 py-2.5 bg-ink text-paper rounded-lg font-medium hover:bg-gold hover:text-ink disabled:opacity-50 disabled:hover:bg-ink disabled:hover:text-paper transition-all"
             >
-              {loading ? 'Cargando...' : isSignUp ? 'Registrarse' : 'Iniciar sesión'}
+              {loading ? 'Cargando...' : isSignUp ? 'Crear cuenta' : 'Iniciar sesión'}
             </button>
-          </div>
 
-          <div className="text-center text-sm text-gray-600">
-            {isSignUp ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?'} {' '}
-            <button
-              type="button"
-              onClick={() => setIsSignUp(!isSignUp)}
-              className="font-medium text-indigo-600 hover:text-indigo-500"
-            >
-              {isSignUp ? 'Iniciar sesión' : 'Registrarse'}
-            </button>
-          </div>
-        </form>
+            <div className="text-center text-sm text-ink-light">
+              {isSignUp ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?'}{' '}
+              <button
+                type="button"
+                onClick={() => { setIsSignUp(!isSignUp); setError('') }}
+                className="font-medium text-gold-dark hover:text-gold transition-colors"
+              >
+                {isSignUp ? 'Iniciar sesión' : 'Registrarse'}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-    </main>
+    </div>
   )
 }

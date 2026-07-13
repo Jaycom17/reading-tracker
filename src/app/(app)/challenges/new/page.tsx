@@ -5,7 +5,13 @@ import { createChallenge } from '@/actions/challenges'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
-const durationPresets = [2, 4, 8, 12, 16, 24, 32, 40, 48, 52]
+const durationPresets = [
+  { value: 4, label: '4 semanas (1 mes)' },
+  { value: 8, label: '8 semanas (2 meses)' },
+  { value: 12, label: '12 semanas (3 meses)' },
+  { value: 26, label: '26 semanas (6 meses)' },
+  { value: 52, label: '52 semanas (1 año)' },
+]
 
 export default function CreateChallengePage() {
   const [name, setName] = useState('')
@@ -36,18 +42,33 @@ export default function CreateChallengePage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-lg shadow p-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">Nuevo Reto de Lectura</h1>
+    <div className="min-h-screen flex items-start sm:items-center justify-center p-4 sm:p-6 lg:p-10 pt-20 sm:pt-6 lg:pt-10">
+      <div className="w-full max-w-2xl mx-auto">
+        <div className="mb-6 sm:mb-8">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-sm text-ink-light hover:text-gold-dark transition-colors mb-4"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            </svg>
+            Volver
+          </Link>
+          <h1 className="font-serif text-3xl text-ink font-semibold">Nuevo Reto de Lectura</h1>
+          <p className="text-ink-light mt-1">Define tu meta de lectura y el plazo para completarla.</p>
+        </div>
+
+        <div className="bg-paper-dark rounded-xl border border-warm-gray/60 p-5 sm:p-8 relative overflow-hidden animate-fade-in-up shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+          <div className="absolute top-0 inset-x-0 h-0.5 bg-gold/50" />
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
+              <div className="bg-burgundy/8 border border-burgundy/25 text-burgundy px-4 py-3 rounded-lg text-sm">
                 {error}
               </div>
             )}
+
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="name" className="block text-sm font-medium text-ink mb-1.5">
                 Nombre del reto
               </label>
               <input
@@ -56,12 +77,14 @@ export default function CreateChallengePage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                placeholder="Ej: 12 libros en 2026"
+                className="w-full px-4 py-2.5 bg-white border border-warm-gray rounded-lg text-ink placeholder-ink-light/50 focus:outline-none focus:ring-2 focus:ring-gold/30 focus:border-gold transition-all"
               />
             </div>
+
             <div>
-              <label htmlFor="goal" className="block text-sm font-medium text-gray-700 mb-1">
-                Meta (número de libros)
+              <label htmlFor="goal" className="block text-sm font-medium text-ink mb-1.5">
+                Meta de libros
               </label>
               <input
                 type="number"
@@ -70,48 +93,58 @@ export default function CreateChallengePage() {
                 onChange={(e) => setGoal(e.target.value)}
                 required
                 min="1"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                placeholder="Ej: 12"
+                className="w-full px-4 py-2.5 bg-white border border-warm-gray rounded-lg text-ink placeholder-ink-light/50 focus:outline-none focus:ring-2 focus:ring-gold/30 focus:border-gold transition-all"
               />
             </div>
+
             <div>
-              <label htmlFor="duration_weeks" className="block text-sm font-medium text-gray-700 mb-1">
-                Duración (semanas)
+              <label className="block text-sm font-medium text-ink mb-3">
+                Duración
               </label>
-              <div className="space-y-2">
-                <select
-                  id="duration_weeks"
-                  value={durationWeeks}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {durationPresets.map((preset) => (
+                  <button
+                    key={preset.value}
+                    type="button"
+                    onClick={() => setDurationWeeks(preset.value.toString())}
+                    className={`px-4 py-3 rounded-lg border text-sm font-medium transition-all ${
+                      durationWeeks === preset.value.toString()
+                        ? 'bg-ink text-paper border-ink'
+                        : 'bg-white text-ink border-warm-gray hover:border-ink-light hover:bg-ink hover:text-paper'
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-3">
+                <label htmlFor="custom_duration" className="block text-xs text-ink-light mb-1">
+                  O personaliza:
+                </label>
+                <input
+                  type="number"
+                  id="custom_duration"
+                  min="1"
+                  placeholder="Número de semanas"
+                  value={durationPresets.some(p => p.value.toString() === durationWeeks) ? '' : durationWeeks}
                   onChange={(e) => setDurationWeeks(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                >
-                  {durationPresets.map((weeks) => (
-                    <option key={weeks} value={weeks.toString()}>
-                      {weeks} semanas
-                    </option>
-                  ))}
-                  <option value="custom">Personalizado...</option>
-                </select>
-                {durationWeeks === 'custom' && (
-                  <input
-                    type="number"
-                    id="custom_duration"
-                    value={durationWeeks}
-                    onChange={(e) => setDurationWeeks(e.target.value)}
-                    min="1"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                    placeholder="Número de semanas"
-                  />
-                )}
+                  className="w-full px-4 py-2.5 bg-white border border-warm-gray rounded-lg text-ink placeholder-ink-light/50 focus:outline-none focus:ring-2 focus:ring-gold/30 focus:border-gold transition-all"
+                />
               </div>
             </div>
-            <div className="flex justify-end space-x-4 pt-4">
-              <Link href="/" className="text-indigo-600 hover:text-indigo-500">
+
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-warm-gray/40">
+              <Link
+                href="/"
+                className="text-sm text-center sm:text-left text-ink-light hover:text-gold-dark transition-colors py-2"
+              >
                 Cancelar
               </Link>
               <button
                 type="submit"
                 disabled={loading}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
+                className="px-6 py-2.5 bg-ink text-paper rounded-lg font-medium hover:bg-gold hover:text-ink disabled:opacity-50 disabled:hover:bg-ink disabled:hover:text-paper transition-all"
               >
                 {loading ? 'Creando...' : 'Crear reto'}
               </button>
@@ -119,6 +152,6 @@ export default function CreateChallengePage() {
           </form>
         </div>
       </div>
-    </main>
+    </div>
   )
 }

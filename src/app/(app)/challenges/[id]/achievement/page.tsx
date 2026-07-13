@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { redirect, notFound } from 'next/navigation'
 import { format } from 'date-fns'
+import Link from 'next/link'
+import { DownloadButton } from './download-button'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -54,36 +56,48 @@ export default async function AchievementPage({ params, searchParams }: Props) {
   }
 
   const imageUrl = `/api/achievement?challenge_id=${id}${book_id ? `&book_id=${book_id}` : ''}`
-  const fileName = book
-    ? `logro-libro-${book.title.toLowerCase().replace(/\s+/g, '-')}-${format(new Date(), 'yyyy-MM-dd')}.png`
-    : `logro-reto-${challenge.name.toLowerCase().replace(/\s+/g, '-')}-${format(new Date(), 'yyyy-MM-dd')}.png`
+  const aspectRatio = 1200 / 630
+
+  const subtitle = book
+    ? `Has completado "${book.title}"`
+    : `Has completado el reto "${challenge.name}"`
 
   return (
-    <main className="min-h-screen bg-gray-900 py-12 px-4 flex items-center justify-center">
-      <div className="max-w-3xl w-full">
-        <div className="bg-gray-800 rounded-xl shadow-2xl p-8 text-center">
+    <div className="min-h-screen flex items-start sm:items-center justify-center p-4 sm:p-6 lg:p-10 pt-20 sm:pt-6 lg:pt-10">
+      <div className="w-full max-w-3xl mx-auto text-center">
+        <div className="mb-6 sm:mb-8">
+          <div className="w-16 h-16 rounded-2xl bg-gold/10 flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-gold" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+            </svg>
+          </div>
+          <h1 className="font-serif text-3xl text-ink font-semibold mb-2">¡Logro desbloqueado!</h1>
+          <p className="text-ink-light">{subtitle}</p>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-warm-gray/50 p-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)] mb-8 relative overflow-hidden animate-fade-in-up">
+          <div className="absolute top-0 inset-x-0 h-0.5 bg-gold/50" />
           <img
             src={imageUrl}
             alt={book ? `Logro: ${book.title}` : `Logro: ${challenge.name}`}
-            className="mx-auto rounded-lg shadow-lg max-w-full h-auto"
+            className="mx-auto rounded-xl w-full h-auto"
+            style={{ aspectRatio: `${aspectRatio}` }}
           />
-          <div className="mt-8 space-y-4">
-            <a
-              href={imageUrl}
-              download={fileName}
-              className="inline-block px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-            >
-              Descargar imagen
-            </a>
-            <a
-              href={book ? `/challenges/${id}` : '/'}
-              className="inline-block px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
-            >
-              Volver
-            </a>
-          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+          <DownloadButton imageUrl={imageUrl} fileName={book ? `logro-libro` : `logro-reto`} />
+          <Link
+            href={book ? `/challenges/${id}` : '/'}
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-warm-gray text-ink rounded-lg font-medium hover:bg-ink hover:text-paper transition-all w-full sm:w-auto"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            </svg>
+            {book ? 'Volver al reto' : 'Ir al inicio'}
+          </Link>
         </div>
       </div>
-    </main>
+    </div>
   )
 }
