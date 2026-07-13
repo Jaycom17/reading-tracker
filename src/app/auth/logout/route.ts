@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
 
   await supabase.auth.signOut()
 
-  const response = NextResponse.redirect(new URL('/login', request.nextUrl.origin))
+  const response = NextResponse.redirect(new URL('/login', request.nextUrl.origin), 302)
   response.cookies.set('sb-auth-token', '', { maxAge: 0, path: '/' })
 
   return response
