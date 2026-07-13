@@ -85,7 +85,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="p-4 sm:p-8 lg:p-10 overflow-hidden">
-      <div className="max-w-6xl">
+      <div className="max-w-6xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6 sm:mb-10">
           <div>
             <h1 className="font-serif text-3xl text-ink font-semibold">Mis Retos</h1>

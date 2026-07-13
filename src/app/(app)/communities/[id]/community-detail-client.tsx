@@ -3,8 +3,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { getCommunityById, leaveCommunity, removeMember, assignBook, getBookComments, postComment } from '@/actions/communities'
+import { getCommunityById, leaveCommunity, removeMember, assignBook, getBookComments, postComment, deleteComment } from '@/actions/communities'
 import DiscussionThread from './_components/discussion-thread'
+import { ConfirmModal } from '../../_components/confirm-modal'
 
 type CommunityData = {
   id: string
@@ -56,8 +57,18 @@ export default function CommunityDetailClient({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [comments, setComments] = useState<any[]>([])
   const [commentsLoading, setCommentsLoading] = useState(false)
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
+  const [leaving, setLeaving] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   const isCreator = community?.creator_id === currentUserId
+
+  async function handleCopyCode() {
+    if (!community) return
+    await navigator.clipboard.writeText(community.access_code)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   const loadCommunity = useCallback(async () => {
     const result = await getCommunityById(communityId)
@@ -118,10 +129,12 @@ export default function CommunityDetailClient({
   }
 
   async function handleLeave() {
-    if (!confirm('¿Seguro que quieres salir de esta comunidad?')) return
+    setLeaving(true)
     const result = await leaveCommunity(communityId)
     if (result.error) {
       alert(result.error)
+      setLeaving(false)
+      setShowLeaveConfirm(false)
       return
     }
     router.push('/')
@@ -145,6 +158,16 @@ export default function CommunityDetailClient({
       throw new Error(result.error)
     }
     loadComments(selectedBookId)
+  }
+
+  async function handleDeleteComment(commentId: string) {
+    const result = await deleteComment(commentId)
+    if (result.error) {
+      throw new Error(result.error)
+    }
+    if (selectedBookId) {
+      loadComments(selectedBookId)
+    }
   }
 
   if (loading) {
@@ -204,7 +227,7 @@ export default function CommunityDetailClient({
               )}
               {!isCreator && (
                 <button
-                  onClick={handleLeave}
+                  onClick={() => setShowLeaveConfirm(true)}
                   className="px-4 py-2 text-sm text-burgundy border border-burgundy/20 rounded-lg hover:bg-burgundy/5 transition-colors"
                 >
                   Salir
@@ -216,8 +239,32 @@ export default function CommunityDetailClient({
           {isCreator && (
             <div className="mt-4 bg-paper-dark rounded-xl border border-warm-gray/60 p-4 relative overflow-hidden">
               <div className="absolute top-0 inset-x-0 h-0.5 bg-gold/50" />
-              <p className="text-xs text-ink-light mb-1">Código de acceso para compartir</p>
-              <p className="font-mono text-2xl tracking-[0.3em] text-ink font-semibold">{community.access_code}</p>
+              <p className="text-xs text-ink-light mb-2">Código de acceso para compartir</p>
+              <div className="flex items-center gap-3">
+                <p className="font-mono text-2xl tracking-[0.3em] text-ink font-semibold flex-1">
+                  {community.access_code}
+                </p>
+                <button
+                  onClick={handleCopyCode}
+                  className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-warm-gray/60 text-ink-light hover:text-gold-dark hover:border-gold/60 transition-all"
+                >
+                  {copied ? (
+                    <>
+                      <svg className="w-3.5 h-3.5 text-sage" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                      </svg>
+                      Copiado
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
+                      </svg>
+                      Copiar
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -398,18 +445,36 @@ export default function CommunityDetailClient({
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="flex gap-2 overflow-x-auto pb-2">
+                <div className="flex gap-3 overflow-x-auto pb-2 snap-x">
                   {books.map((book) => (
                     <button
                       key={book.id}
                       onClick={() => loadComments(book.id)}
-                      className={`shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                      className={`shrink-0 w-52 snap-start text-left rounded-xl border p-4 transition-all ${
                         selectedBookId === book.id
-                          ? 'bg-ink text-paper'
-                          : 'bg-paper-dark border border-warm-gray/60 text-ink hover:border-gold'
+                          ? 'bg-ink text-paper border-ink shadow-lg'
+                          : 'bg-paper-dark border-warm-gray/60 text-ink hover:border-gold hover:shadow-md'
                       }`}
                     >
-                      {book.title}
+                      <div className="flex items-center gap-3">
+                        <div className={`shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${
+                          selectedBookId === book.id
+                            ? 'bg-gold/20 text-gold'
+                            : 'bg-gold/10 text-gold-dark'
+                        }`}>
+                          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                          </svg>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm truncate">{book.title}</p>
+                          <p className={`text-xs mt-0.5 truncate ${
+                            selectedBookId === book.id ? 'text-paper/60' : 'text-ink-light'
+                          }`}>
+                            {book.author}
+                          </p>
+                        </div>
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -419,6 +484,8 @@ export default function CommunityDetailClient({
                     initialComments={comments}
                     loading={commentsLoading}
                     onPostComment={handlePostComment}
+                    isCreator={isCreator}
+                    onDeleteComment={handleDeleteComment}
                   />
                 )}
 
@@ -466,6 +533,17 @@ export default function CommunityDetailClient({
             })}
           </div>
         )}
+
+      <ConfirmModal
+        open={showLeaveConfirm}
+        title="Salir de la comunidad"
+        message="¿Estás seguro de que quieres salir de esta comunidad?"
+        warning="No podrás acceder a los libros ni a las discusiones."
+        confirmLabel="Salir"
+        onCancel={() => setShowLeaveConfirm(false)}
+        onConfirm={handleLeave}
+        loading={leaving}
+      />
       </div>
     </div>
   )

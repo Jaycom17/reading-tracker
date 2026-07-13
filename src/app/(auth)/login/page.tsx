@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
-import { useRouter } from 'next/navigation'
 import { getOrCreateProfile } from '@/actions/profiles'
 
 export const dynamic = 'force-dynamic'
@@ -13,7 +12,6 @@ export default function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
 
   const supabase = useMemo(
     () =>
@@ -38,8 +36,7 @@ export default function LoginPage() {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
         await getOrCreateProfile()
-        router.push('/')
-        router.refresh()
+        window.location.href = '/'
       }
     } catch {
       setError('Credenciales inválidas')

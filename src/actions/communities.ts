@@ -393,6 +393,52 @@ export async function getBookComments(communityBookId: string) {
   return { data: enriched }
 }
 
+export async function deleteComment(commentId: string) {
+  const cookieStore = await cookies()
+  const supabase = createClient(cookieStore)
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { error: 'No autorizado' }
+  }
+
+  const { data: comment, error: commentError } = await supabase
+    .from('community_comments')
+    .select('id, community_book_id')
+    .eq('id', commentId)
+    .maybeSingle()
+
+  if (commentError || !comment) {
+    return { error: 'Comentario no encontrado' }
+  }
+
+  const { data: book } = await supabase
+    .from('community_books')
+    .select('community_id')
+    .eq('id', comment.community_book_id)
+    .maybeSingle()
+
+  if (!book) {
+    return { error: 'Libro no encontrado' }
+  }
+
+  if (!(await isCreator(supabase, book.community_id, user.id))) {
+    return { error: 'Solo el creador puede eliminar comentarios' }
+  }
+
+  const { error } = await supabase
+    .from('community_comments')
+    .delete()
+    .eq('id', commentId)
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  revalidatePath(`/communities/${book.community_id}`)
+  return { success: true }
+}
+
 export async function getCommunityBooks(communityId: string) {
   const cookieStore = await cookies()
   const supabase = createClient(cookieStore)

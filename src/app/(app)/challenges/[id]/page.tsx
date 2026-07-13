@@ -265,6 +265,16 @@ export default function ChallengeDetailPage() {
   const [savingEdit, setSavingEdit] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [actionError, setActionError] = useState('')
+  const [currentWeek, setCurrentWeek] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (!challenge) return
+    const created = new Date(challenge.created_at)
+    const now = new Date()
+    const diffMs = now.getTime() - created.getTime()
+    const diffWeeks = Math.ceil(diffMs / (7 * 24 * 60 * 60 * 1000))
+    setCurrentWeek(Math.min(Math.max(diffWeeks, 1), challenge.duration_weeks))
+  }, [challenge])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -390,16 +400,7 @@ export default function ChallengeDetailPage() {
   const isChallengeComplete = completedCount >= challenge.goal
   const canAddMore = books.length < challenge.goal
 
-  const getCurrentWeek = (createdAt: string, durationWeeks: number) => {
-    const created = new Date(createdAt)
-    const now = new Date()
-    const diffMs = now.getTime() - created.getTime()
-    const diffWeeks = Math.ceil(diffMs / (7 * 24 * 60 * 60 * 1000))
-    return Math.min(Math.max(diffWeeks, 1), durationWeeks)
-  }
-
-  const currentWeek = getCurrentWeek(challenge.created_at, challenge.duration_weeks)
-  const isTimeUp = currentWeek >= challenge.duration_weeks && !isChallengeComplete
+  const isTimeUp = currentWeek !== null && currentWeek >= challenge.duration_weeks && !isChallengeComplete
 
   return (
     <div className="min-h-screen flex justify-center px-4 sm:px-6 lg:px-10 pt-4 lg:pt-6 pb-10">
@@ -481,7 +482,7 @@ export default function ChallengeDetailPage() {
               <svg className="w-4 h-4 text-ink-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span className="text-sm text-ink-light">Semana {currentWeek}/{challenge.duration_weeks}</span>
+              <span className="text-sm text-ink-light">Semana {currentWeek ?? '--'}/{challenge.duration_weeks}</span>
             </div>
             {isTimeUp && (
               <span className="px-3 py-1 bg-burgundy/8 text-burgundy text-xs font-medium rounded-full">
